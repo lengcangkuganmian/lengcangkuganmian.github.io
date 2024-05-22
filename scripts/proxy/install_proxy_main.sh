@@ -2,7 +2,7 @@
 ################################################################################
 # This script is work for auto deploy proxy software and start service.
 # author: Charles.K
-# version: v1.0
+# version: v1.0.0
 ################################################################################
 
 SERVER_NAME="" # server's domain name, will use to sni and request cert.
@@ -270,7 +270,7 @@ installCerts(){
 downloadScript(){
 	echo "Download script."
 	cd /root
-	wget https://raw.githubusercontent.com/lengcangkuganmian/public_resource/main/tcp.sh
+	wget https://lengcangkuganmian.github.io/scripts/proxy/tcp.sh
 	chmod +x tcp.sh
 }
 

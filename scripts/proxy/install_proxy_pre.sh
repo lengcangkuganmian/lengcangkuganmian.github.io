@@ -2,7 +2,7 @@
 ################################################################################
 # This script is work for VPS init. now support only for almalinux9
 # author: Charles.K
-# version: v0.2.0
+# version: v1.0.0
 ################################################################################
 
 SSH_PORT=9528  # use ssh port what you want
@@ -33,6 +33,13 @@ installInitTools(){
 installDevelopmentTools(){
 	echo "Install Development Tools."
 	dnf groupinstall -y "Development Tools"
+}
+
+downloadScript(){
+	echo "Download script."
+	cd /root
+	wget https://lengcangkuganmian.github.io/scripts/proxy/install_proxy_main.sh
+	chmod +x install_proxy_main.sh
 }
 
 initServer(){
