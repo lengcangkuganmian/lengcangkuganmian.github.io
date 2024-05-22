@@ -2,17 +2,16 @@
 ################################################################################
 # This script is work for auto deploy proxy software and start service.
 # author: Charles.K
-# version: v0.2.0
+# version: v1.0
 ################################################################################
 
 SERVER_NAME="" # server's domain name, will use to sni and request cert.
 RUNNING_PROXY=""  # proxy name: xray or trojan-go.
-TROJANGO_PASSWORD=""  # If using trojan-go please set password here, xray will auto generate uuid.
 EMAIL=""  # using on request cert.
 
 createFolders(){
 	echo "Create folders which will be used."
-	mkdir -p /usr/local/nginx/src /usr/local/cloudreve /usr/local/trojan-go/certs /var/log/trojan-go /usr/local/xray /var/log/xray /usr/local/certs /usr/local/proxy_scripts
+	mkdir -p /usr/local/nginx/src /usr/local/cloudreve /usr/local/xray /var/log/xray /usr/local/certs /usr/local/proxy_scripts
 }
 
 installDependencePackage(){
@@ -153,150 +152,11 @@ server {
 EOF
 }
 
-installTrojango(){
-	echo "Install trojan go"
-	cd /usr/local/trojan-go
-	wget https://github.com/p4gefau1t/trojan-go/releases/download/v0.10.6/trojan-go-linux-amd64.zip
-	unzip trojan-go-linux-amd64.zip
-	cat > config.json << EOF
-{
-  "run_type": "server",
-  "local_addr": "0.0.0.0",
-  "local_port": 443,
-  "remote_addr": "127.0.0.1",
-  "remote_port": 5212,
-  "log_level": 0,
-  "log_file": "/var/log/trojan-go/trojan-go.log",
-  "password": [""],
-  "disable_http_check": false,
-  "udp": true,
-  "udp_timeout": 60,
-  "ssl": {
-    "verify": true,
-    "verify_hostname": true,
-    "cert": "/usr/local/certs/fullchain.cer",
-    "key": "/usr/local/certs/cert.key",
-    "key_password": "",
-    "cipher": "",
-    "curves": "",
-    "prefer_server_cipher": false,
-    "sni": "$SERVER_NAME",
-    "alpn": [
-      "http/1.1"
-    ],
-    "session_ticket": true,
-    "reuse_session": true,
-    "plain_http_response": "",
-    "fallback_addr": "127.0.0.1",
-    "fallback_port": 5212,
-    "fingerprint": ""
-  },
-  "tcp": {
-    "no_delay": true,
-    "keep_alive": true,
-    "prefer_ipv4": false
-  },
-  "mux": {
-    "enabled": false,
-    "concurrency": 8,
-    "idle_timeout": 60
-  },
-  "router": {
-    "enabled": false,
-    "bypass": [],
-    "proxy": [],
-    "block": [],
-    "default_policy": "proxy",
-    "domain_strategy": "as_is",
-    "geoip": "\$PROGRAM_DIR$/geoip.dat",
-    "geosite": "\$PROGRAM_DIR$/geosite.dat"
-  },
-  "websocket": {
-    "enabled": false,
-    "path": "",
-    "host": ""
-  },
-  "shadowsocks": {
-    "enabled": false,
-    "method": "AES-128-GCM",
-    "password": ""
-  },
-  "transport_plugin": {
-    "enabled": false,
-    "type": "",
-    "command": "",
-    "option": "",
-    "arg": [],
-    "env": []
-  },
-  "forward_proxy": {
-    "enabled": false,
-    "proxy_addr": "",
-    "proxy_port": 0,
-    "username": "",
-    "password": ""
-  },
-  "mysql": {
-    "enabled": false,
-    "server_addr": "localhost",
-    "server_port": 3306,
-    "database": "",
-    "username": "",
-    "password": "",
-    "check_rate": 60
-  },
-  "api": {
-    "enabled": true,
-    "api_addr": "127.0.0.1",
-    "api_port": 10001,
-    "ssl": {
-      "enabled": false,
-      "key": "",
-      "cert": "",
-      "verify_client": false,
-      "client_cert": []
-    }
-  }
-}
-EOF
-	cat > /usr/lib/systemd/system/trojan-go.service << EOF
-[Unit]
-Description=Trojan-Go - An unidentifiable mechanism that helps you bypass GFW
-Documentation=https://p4gefau1t.github.io/trojan-go/
-After=network.target nss-lookup.target
-
-[Service]
-CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
-AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
-NoNewPrivileges=true
-ExecStart=/usr/local/trojan-go/trojan-go -config /usr/local/trojan-go/config.json
-Restart=on-failure
-RestartSec=10s
-LimitNPROC=10000
-LimitNOFILE=1000000
-
-[Install]
-WantedBy=multi-user.target
-EOF
-	cat > /etc/logrotate.d/trojan-go << EOF
-# Trojan-go logs
-/var/log/trojan-go/trojan-go.log {
-daily
-rotate 7
-missingok
-notifempty
-dateext
-copytruncate
-}
-EOF
-	systemctl daemon-reload
-}
-
 installXray(){
 	cd /usr/local/xray
-	wget https://github.com/XTLS/Xray-core/releases/download/v1.8.9/Xray-linux-64.zip
-	unzip Xray-linux-32.zip
-	rm -f Xray-linux-32.zip
+	wget https://github.com/XTLS/Xray-core/releases/download/v1.8.11/Xray-linux-64.zip
+	unzip Xray-linux-64.zip
+	rm -f Xray-linux-64.zip
 	ln -s /usr/local/xray/xray /usr/local/bin/xray
 	cat > /usr/lib/systemd/system/xray.service << EOF
 [Unit]
@@ -390,24 +250,11 @@ EOF
 }
 
 setupProxy(){
-	cat > /usr/local/proxy_scripts/reload-certs-xray.sh << EOF
+	cat > /usr/local/proxy_scripts/reload-certs.sh << EOF
 #!/bin/sh
 
 systemctl restart xray
 EOF
-	cat > /usr/local/proxy_scripts/reload-certs-trojango.sh << EOF
-#!/bin/sh
-
-systemctl restart trojan-go
-EOF
-	if [ $RUNNING_PROXY == "xray" ]; then
-		cp /usr/local/proxy_scripts/reload-certs-xray.sh /usr/local/proxy_scripts/reload-certs.sh
-		systemctl enable xray
-	fi
-	if [ $RUNNING_PROXY == "trojan-go" ]; then
-		cp /usr/local/proxy_scripts/reload-certs-trojango.sh /usr/local/proxy_scripts/reload-certs.sh
-		systemctl enable trojan-go
-	fi
 	chmod +x /usr/local/proxy_scripts/*.sh
 }
 
