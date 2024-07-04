@@ -2,11 +2,10 @@
 ################################################################################
 # This script is work for auto deploy proxy software and start service.
 # author: Charles.K
-# version: v1.0.0
+# version: v1.1.0
 ################################################################################
 
 SERVER_NAME="" # server's domain name, will use to sni and request cert.
-RUNNING_PROXY=""  # proxy name: xray or trojan-go.
 EMAIL=""  # using on request cert.
 
 createFolders(){
@@ -29,9 +28,9 @@ installNginx(){
 	echo "Install nginx from source code."
 	installDependencePackage
 	cd /usr/local/nginx/src
-	wget https://nginx.org/download/nginx-1.24.0.tar.gz
-	tar xf nginx-1.24.0.tar.gz
-	cd nginx-1.24.0
+	wget https://nginx.org/download/nginx-1.26.0.tar.gz
+	tar xf nginx-1.26.0.tar.gz
+	cd nginx-1.26.0
 	addUserandGroup
 	./configure --prefix=/usr/local/nginx --user=www --group=www --sbin-path=/usr/local/nginx/sbin/nginx --conf-path=/usr/local/nginx/conf/nginx.conf  --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --pid-path=/var/run/nginx.pid --lock-path=/var/run/nginx.lock  --with-http_ssl_module --with-http_sub_module --with-http_gunzip_module --with-http_stub_status_module --with-pcre --with-stream --with-stream_realip_module  --with-stream_ssl_module --with-stream_ssl_preread_module --with-http_v2_module --with-http_gzip_static_module
 	make && make install
@@ -110,8 +109,8 @@ EOF
 installCloudreve(){
 	echo "Install cloudreve."
 	cd /usr/local/cloudreve
-	wget https://github.com/cloudreve/Cloudreve/releases/download/3.8.2/cloudreve_3.8.2_linux_amd64.tar.gz
-	tar xf cloudreve_3.8.2_linux_amd64.tar.gz
+	wget https://github.com/cloudreve/Cloudreve/releases/download/3.8.3/cloudreve_3.8.3_linux_amd64.tar.gz
+	tar xf cloudreve_3.8.3_linux_amd64.tar.gz
 	nohup ./cloudreve > first.log &
 	sleep 10
 	kill $(ps -ef | grep "cloudreve" | grep -v "grep" | awk '{ print $2 }')
@@ -154,7 +153,7 @@ EOF
 
 installXray(){
 	cd /usr/local/xray
-	wget https://github.com/XTLS/Xray-core/releases/download/v1.8.11/Xray-linux-64.zip
+	wget https://github.com/XTLS/Xray-core/releases/download/v1.8.16/Xray-linux-64.zip
 	unzip Xray-linux-64.zip
 	rm -f Xray-linux-64.zip
 	ln -s /usr/local/xray/xray /usr/local/bin/xray
@@ -281,7 +280,6 @@ main()
 	installNginx
 	modifyNginxConfig
 	installCloudreve
-	installTrojango
 	installXray
 	setupProxy
 	installCerts
