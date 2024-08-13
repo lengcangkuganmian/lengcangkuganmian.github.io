@@ -16,7 +16,7 @@ turnOffSelinux(){
 
 modifySSHPort(){
 	echo "Modify SSH port and modify firewall rule."
-	sed -i 's/^#Port.*/Port $SSH_PORT/g' /etc/ssh/sshd_config
+	sed -i "s/^#Port.*/Port $SSH_PORT/g" /etc/ssh/sshd_config
 	sed -i "s/port=\"22\"/port=\"$SSH_PORT\"/g" /usr/lib/firewalld/services/ssh.xml
 }
 

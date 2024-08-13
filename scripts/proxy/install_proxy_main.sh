@@ -74,10 +74,13 @@ EOF
 server{
     listen 80;
     server_name $SERVER_NAME;
+
     error_page 403 /403.html;
+
     location / {
         return 403;
     }
+	
     location = /403.html {
         root /usr/local/nginx/html;
     }
