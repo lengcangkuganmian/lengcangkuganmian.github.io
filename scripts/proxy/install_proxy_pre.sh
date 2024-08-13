@@ -52,6 +52,7 @@ initServer(){
 	makePackageRepoCache
 	installInitTools
 	installDevelopmentTools
+	downloadScript
 }
 
 initServer
