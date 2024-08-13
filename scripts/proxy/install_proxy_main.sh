@@ -262,6 +262,7 @@ EOF
 
 installCerts(){
 	echo "Install cert."
+	systemctl restart nginx
 	cd /root
 	curl https://get.acme.sh | sh -s email=$EMAIL
 	cd .acme.sh/
