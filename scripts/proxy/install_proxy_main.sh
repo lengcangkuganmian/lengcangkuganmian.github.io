@@ -249,6 +249,7 @@ copytruncate
 }
 EOF
 	systemctl daemon-reload
+	systemctl enable xray
 }
 
 setupProxy(){
