@@ -2,7 +2,7 @@
 ################################################################################
 # This script is work for auto deploy proxy software and start service.
 # author: Charles.K
-# version: v1.1.0
+# version: v1.2.1
 ################################################################################
 
 SERVER_NAME="" # server's domain name, will use to sni and request cert.
@@ -28,9 +28,9 @@ installNginx(){
 	echo "Install nginx from source code."
 	installDependencePackage
 	cd /usr/local/nginx/src
-	wget https://nginx.org/download/nginx-1.26.0.tar.gz
-	tar xf nginx-1.26.0.tar.gz
-	cd nginx-1.26.0
+	wget https://nginx.org/download/nginx-1.26.3.tar.gz
+	tar xf nginx-1.26.3.tar.gz
+	cd nginx-1.26.3
 	addUserandGroup
 	./configure --prefix=/usr/local/nginx --user=www --group=www --sbin-path=/usr/local/nginx/sbin/nginx --conf-path=/usr/local/nginx/conf/nginx.conf  --error-log-path=/var/log/nginx/error.log --http-log-path=/var/log/nginx/access.log --pid-path=/var/run/nginx.pid --lock-path=/var/run/nginx.lock  --with-http_ssl_module --with-http_sub_module --with-http_gunzip_module --with-http_stub_status_module --with-pcre --with-stream --with-stream_realip_module  --with-stream_ssl_module --with-stream_ssl_preread_module --with-http_v2_module --with-http_gzip_static_module
 	make && make install
@@ -141,12 +141,12 @@ EOF
 	cat > /usr/local/nginx/conf/vhost/cloudreve.conf << EOF
 server {
     listen 8001 proxy_protocol;
-    listen 8002 http2 proxy_protocol;
+	http2 on;
   
     location / {
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-NginX-Proxy true;
         proxy_pass http://127.0.0.1:5212;
     }
@@ -156,7 +156,7 @@ EOF
 
 installXray(){
 	cd /usr/local/xray
-	wget https://github.com/XTLS/Xray-core/releases/download/v1.8.16/Xray-linux-64.zip
+	wget https://github.com/XTLS/Xray-core/releases/download/v25.3.6/Xray-linux-64.zip
 	unzip Xray-linux-64.zip
 	rm -f Xray-linux-64.zip
 	ln -s /usr/local/xray/xray /usr/local/bin/xray
@@ -267,6 +267,7 @@ installCerts(){
 	cd /root
 	curl https://get.acme.sh | sh -s email=$EMAIL
 	cd .acme.sh/
+	./acme.sh --register-account -m $EMAIL
 	./acme.sh --issue -d $SERVER_NAME --nginx /usr/local/nginx/conf/nginx.conf
 	./acme.sh --install-cert -d $SERVER_NAME --key-file /usr/local/certs/cert.key --fullchain-file /usr/local/certs/fullchain.cer --reloadcmd  "sh /usr/local/proxy_scripts/reload-certs.sh"
 }
